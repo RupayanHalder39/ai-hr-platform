@@ -1,0 +1,15 @@
+export function OnboardingPage() {
+  return (
+    <section className="page">
+      <header className="page__header">
+        <div>
+          <h1>Onboarding</h1>
+          <p>Placeholder content. TODO: connect to backend module.</p>
+        </div>
+      </header>
+      <div className="card">
+        <div className="card__body">Ready for future integration.</div>
+      </div>
+    </section>
+  );
+}
