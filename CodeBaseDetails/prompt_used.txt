@@ -1,0 +1,12 @@
+Act as a Principal Software Architect. Analyze the entire codebase at /Users/rupayan/ai-hr-platform/, including the Frontend, Backend, and Database configurations.
+
+Generate a file named 'Project_Intelligence.md' to be stored in the /CodeBaseDetails/ directory. This file must serve as the "Source of Truth" for any LLM accessing this project.
+
+Include these specific sections:
+1. **Full-Stack Overview**: How the FE (React/etc.), BE (Node/Python/etc.), and DB relate to each other.
+2. **Directory Map**: A guide to the /CodeBaseDetails/, /frontend, /backend, and any other root folders.
+3. **Data Flow**: Explain the journey of a request from the UI, through the API logic, to the DB storage.
+4. **Logic Modules**: Describe what each module/service does (e.g., Auth, Resume Parsing, AI Matching).
+5. **LLM Instructions**: Specific instructions for future AIs on how to maintain the coding style and state management patterns used here.
+
+Format the output in clean Markdown.
