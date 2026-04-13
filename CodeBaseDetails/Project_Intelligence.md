@@ -77,8 +77,9 @@ Other modules under `/frontend/src/modules/`:
 
 **Config-driven content**:
 - `config/sidebarConfig.js` — sidebar structure and role permissions.
-- `config/dashboardContent.js` — dashboard labels/content.
-- `config/jobsContent.js` — jobs page content and labels.
+- `config/uiText.js` — shared UI text helpers (non-business labels).
+- `config/candidatesContent.js` — candidates UI labels and column config.
+- `config/userContext.js` — local fallback user context (role/permissions). Real role/permissions are fetched from DB at runtime.
 
 ## 5. LLM Instructions (Maintenance & Style)
 - **Do not change folder structure.** Feature modules must remain nested under `modules/hiring/` (no flat modules).
@@ -97,6 +98,9 @@ Other modules under `/frontend/src/modules/`:
 - **API route consistency**:
   - All hiring endpoints under `/api/v1/hiring/<module>`.
   - Maintain consistent response envelopes (`APIResponse`, `ListResponse`).
+- **DB-driven UI (Total Dynamic Control)**:
+  - Dashboard and Jobs pages now derive status labels and category names from `/api/v1/hiring/settings/statuses`.
+  - Roles & permissions are fetched from `/api/v1/hiring/settings/roles` and rendered in Settings UI.
 - **Styling**:
   - UI uses claymorphic styles defined in `frontend/src/index.css`.
   - Avoid introducing new CSS frameworks; extend existing styles.

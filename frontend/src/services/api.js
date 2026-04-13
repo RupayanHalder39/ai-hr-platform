@@ -1,4 +1,5 @@
-const BASE_URL = import.meta?.env?.VITE_API_BASE_URL || "";
+export const BASE_URL = import.meta?.env?.VITE_API_BASE_URL || "http://localhost:8000";
+console.log("Current API Target:", BASE_URL);
 
 async function request(path, options = {}) {
   const response = await fetch(`${BASE_URL}${path}`, {
@@ -9,6 +10,13 @@ async function request(path, options = {}) {
   if (!response.ok) {
     const errorBody = await response.json().catch(() => ({}));
     const message = errorBody?.detail || "Request failed";
+    console.error("API error:", {
+      path,
+      status: response.status,
+      statusText: response.statusText,
+      message,
+      errorBody,
+    });
     throw new Error(message);
   }
 

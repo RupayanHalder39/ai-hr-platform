@@ -3,16 +3,24 @@ import { Sidebar } from "./Sidebar";
 
 export function Layout({
   userPermissions = [],
+  user,
   currentPath,
   onNavigate,
   pageTitle,
   pageSubtitle,
   notificationCount = 0,
+  dbStatus = "ok",
   children,
 }) {
   return (
     <div className="app-shell">
-      <Sidebar userPermissions={userPermissions} currentPath={currentPath} onNavigate={onNavigate} />
+      <Sidebar
+        userPermissions={userPermissions}
+        user={user}
+        dbStatus={dbStatus}
+        currentPath={currentPath}
+        onNavigate={onNavigate}
+      />
       <main className="app-content">
         <header className="topbar">
           <div>

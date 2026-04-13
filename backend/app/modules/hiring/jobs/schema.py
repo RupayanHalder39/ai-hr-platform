@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
 
@@ -25,6 +26,19 @@ class JobRead(BaseModel):
     description: str
     status_id: int
     created_by: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class JobListRead(BaseModel):
+    id: int
+    title: str
+    description: str
+    status_id: int
+    status_name: str
+    created_at: datetime
 
     class Config:
         from_attributes = True

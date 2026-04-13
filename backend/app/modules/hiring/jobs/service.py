@@ -12,4 +12,16 @@ class JobService:
         # TODO: add filtering, sorting, and access control
         items = await self.repository.list(session, pagination)
         total = await self.repository.count(session)
-        return items, total
+        payload = []
+        for job, status_name in items:
+            payload.append(
+                {
+                    "id": job.id,
+                    "title": job.title,
+                    "description": job.description,
+                    "status_id": job.status_id,
+                    "status_name": status_name,
+                    "created_at": job.created_at,
+                }
+            )
+        return payload, total

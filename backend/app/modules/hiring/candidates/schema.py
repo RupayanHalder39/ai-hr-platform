@@ -36,3 +36,17 @@ class CandidateRead(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class CandidateListRead(BaseModel):
+    id: int
+    name: str
+    email_subtitle: str
+    job_title: str
+    stage_name: str
+    score: Optional[int] = None
+    status: str
+    applied_date: str
+
+    class Config:
+        from_attributes = True

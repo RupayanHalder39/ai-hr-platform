@@ -18,6 +18,15 @@ class JobRead(BaseModel):
         from_attributes = True
 
 
+class RoleRead(BaseModel):
+    id: int
+    name: str
+    permissions: list[str]
+
+    class Config:
+        from_attributes = True
+
+
 class StatusRead(BaseModel):
     id: int
     entity_type: str

@@ -1,14 +1,16 @@
+import { uiText } from "../../../config/uiText";
+
 export function SettingsPage() {
   return (
     <section className="page">
       <header className="page__header">
         <div>
-          <h1>Settings</h1>
-          <p>Placeholder content. TODO: connect to backend module.</p>
+          <h1>{uiText.settings.hiringTitle}</h1>
+          <p>{uiText.settings.hiringSubtitle}</p>
         </div>
       </header>
       <div className="card">
-        <div className="card__body">Ready for future integration.</div>
+        <div className="card__body">{uiText.placeholders.body}</div>
       </div>
     </section>
   );

@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_session
 from app.modules.hiring.settings.repository import HiringSettingsRepository
-from app.modules.hiring.settings.schema import JobRead, StageRead, StatusRead
+from app.modules.hiring.settings.schema import JobRead, RoleRead, StageRead, StatusRead
 from app.modules.hiring.settings.service import HiringSettingsService
 from app.schemas.response import APIResponse
 
@@ -32,6 +32,15 @@ async def list_jobs(
     return APIResponse(data=jobs)
 
 
+@router.get("/roles", response_model=APIResponse[list[RoleRead]])
+async def list_roles(
+    session: AsyncSession = Depends(get_session),
+    service: HiringSettingsService = Depends(get_service),
+):
+    roles = await service.list_roles(session)
+    return APIResponse(data=roles)
+
+
 @router.get("/statuses", response_model=APIResponse[list[StatusRead]])
 async def list_statuses(
     entity_type: str | None = Query(None),
@@ -40,3 +49,12 @@ async def list_statuses(
 ):
     statuses = await service.list_statuses(session, entity_type)
     return APIResponse(data=statuses)
+
+
+@router.get("/health", response_model=APIResponse[dict])
+async def health_check(
+    session: AsyncSession = Depends(get_session),
+    service: HiringSettingsService = Depends(get_service),
+):
+    await service.check_health(session)
+    return APIResponse(data={"ok": True})

@@ -1,4 +1,5 @@
 from typing import Dict, Optional
+from app.core.config import get_settings
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.candidate import Candidate
@@ -20,7 +21,27 @@ class CandidateService:
     ):
         items = await self.repository.list_with_lookups(session, pagination, filters)
         total = await self.repository.count(session, filters)
-        return items, total
+        settings = get_settings()
+        email_domain = getattr(settings, "email_subtitle_domain", None) or "email.com"
+        payload = []
+        for candidate, job_title, stage_name in items:
+            slug = candidate.name.strip().lower().replace(" ", ".")
+            email_subtitle = f"{slug}@{email_domain}"
+            applied_date = candidate.created_at.date().isoformat() if candidate.created_at else ""
+            status = "Pending" if stage_name.lower() == "rejected" else "Active"
+            payload.append(
+                {
+                    "id": candidate.id,
+                    "name": candidate.name,
+                    "email_subtitle": email_subtitle,
+                    "job_title": job_title,
+                    "stage_name": stage_name,
+                    "score": candidate.score,
+                    "status": status,
+                    "applied_date": applied_date,
+                }
+            )
+        return payload, total
 
     async def get_candidate(self, session: AsyncSession, candidate_id: int):
         result = await self.repository.get_with_lookups(session, candidate_id)

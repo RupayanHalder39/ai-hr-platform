@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_session
 from app.modules.hiring.jobs.repository import JobRepository
-from app.modules.hiring.jobs.schema import JobRead
+from app.modules.hiring.jobs.schema import JobListRead
 from app.modules.hiring.jobs.service import JobService
 from app.schemas.response import ListResponse, PaginationMeta
 from app.utils.pagination import Pagination
@@ -15,7 +15,7 @@ def get_service() -> JobService:
     return JobService(JobRepository())
 
 
-@router.get("/", response_model=ListResponse[JobRead])
+@router.get("", response_model=ListResponse[JobListRead])
 async def list_jobs(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),

@@ -1,135 +1,113 @@
-import { useMemo, useState } from "react";
-import { Plus, Sparkles, Globe, Pencil, Eye } from "lucide-react";
-import { Button } from "../../../components/common/Button";
+import { useEffect, useMemo, useState } from "react";
+import { Database, Plus } from "lucide-react";
 import { Badge } from "../../../components/common/Badge";
 import { ClayCard } from "../../../components/common/ClayCard";
-import { jobsContent } from "../../../config/jobsContent";
+import { ClaySpinner } from "../../../components/common/ClaySpinner";
+import { EmptyState } from "../../../components/common/EmptyState";
+import { Button } from "../../../components/common/Button";
+import { jobsApi } from "../../../services/jobs";
+import { uiText } from "../../../config/uiText";
 
-const actionIcons = {
-  linkedin: Globe,
-  indeed: Globe,
-  edit: Pencil,
-  view: Eye,
-  approve: Sparkles,
+const statusVariant = (label = "") => {
+  const key = label.toLowerCase();
+  if (key.includes("publish")) return "status-published";
+  if (key.includes("draft")) return "status-draft";
+  if (key.includes("close")) return "status-closed";
+  return "outline";
 };
 
-export function JobsPage() {
-  const [isOpen, setIsOpen] = useState(false);
+const formatDate = (value) => {
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return "";
+  return date.toISOString().split("T")[0];
+};
 
-  const cards = useMemo(() => jobsContent.cards, []);
-  const { page, labels, actions, form, statusMap, actionLabels } = jobsContent;
+function JobCard({ job }) {
+  return (
+    <ClayCard className="job-card">
+      <div className="job-card__top">
+        <div>
+          <div className="job-card__title">
+            <h3>{job.title}</h3>
+          </div>
+        </div>
+        {job.status_name && (
+          <Badge variant={statusVariant(job.status_name)}>{job.status_name}</Badge>
+        )}
+      </div>
+      <p className="job-card__description">{job.description}</p>
+      <div className="job-card__footer">
+        <span className="job-card__created">
+          {uiText.jobs.created} {formatDate(job.created_at)}
+        </span>
+        <span className="job-card__db">
+          <Database size={14} /> {uiText.jobs.sourceBadge}
+        </span>
+      </div>
+    </ClayCard>
+  );
+}
+
+export function JobsPage() {
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const response = await jobsApi.list({ page: 1, page_size: 25 });
+        setJobs(response.data || []);
+      } catch (err) {
+        setError(uiText.jobs.error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const cards = useMemo(() => jobs, [jobs]);
 
   return (
     <section className="jobs">
       <header className="jobs__header">
         <div>
-          <h2>{page.title}</h2>
-          <p>{page.subtitle}</p>
+          <h2>{uiText.jobs.title}</h2>
+          <p>{uiText.jobs.subtitle}</p>
         </div>
-        <Button onClick={() => setIsOpen(true)}>
-          <Plus size={16} /> {page.ctaLabel}
+        <Button>
+          <Plus size={16} /> {uiText.jobs.create}
         </Button>
       </header>
 
-      <div className="jobs__list">
-        {cards.map((job) => (
-          <ClayCard key={job.id} className="job-card">
-            <div className="job-card__top">
-              <div>
-                <div className="job-card__title">
-                  <h3>{job.title}</h3>
-                  {job.aiGenerated && <Badge>{labels.aiGenerated}</Badge>}
-                </div>
-                <div className="job-card__meta">
-                  {job.tags.map((tag) => (
-                    <span key={tag}>{tag}</span>
-                  ))}
-                </div>
-              </div>
-              {(() => {
-                const statusConfig = statusMap[job.status];
-                const label = statusConfig ? labels[statusConfig.labelKey] : job.status;
-                const variant = statusConfig ? statusConfig.variant : "outline";
-                return <Badge variant={variant}>{label}</Badge>;
-              })()}
-            </div>
-            <p className="job-card__description">{job.description}</p>
-            <div className="job-card__footer">
-              <span>{job.candidates} candidates</span>
-              <span>Created {job.createdAt}</span>
-              <div className="job-card__actions">
-                {job.actions.map((action) => {
-                  const Icon = actionIcons[action] || Globe;
-                  const label = actionLabels[action] || action;
-                  return (
-                    <Button key={action} variant="outline" size="sm">
-                      <Icon size={14} /> {label}
-                    </Button>
-                  );
-                })}
-              </div>
-            </div>
-          </ClayCard>
-        ))}
+      <div className="jobs__subheader">
+        <h3>{uiText.jobs.pageTitle}</h3>
+        <span>{uiText.jobs.pageSubtitle}</span>
       </div>
 
-      {isOpen && (
-        <div className="modal">
-          <div className="modal__backdrop" onClick={() => setIsOpen(false)} />
-          <div className="modal__content">
-            <div className="modal__header">
-              <h3>{form.title}</h3>
-              <button className="modal__close" onClick={() => setIsOpen(false)}>
-                ×
-              </button>
-            </div>
-
-            <div className="ai-toggle">
-              <div>
-                <p>{form.aiToggleTitle}</p>
-                <span>{form.aiToggleSubtitle}</span>
-              </div>
-              <div className="toggle" />
-            </div>
-
-            <div className="form-grid">
-              <label>
-                {form.fields.title.label}
-                <input placeholder={form.fields.title.placeholder} />
-              </label>
-              <label>
-                {form.fields.department.label}
-                <input placeholder={form.fields.department.placeholder} />
-              </label>
-              <label>
-                {form.fields.location.label}
-                <input placeholder={form.fields.location.placeholder} />
-              </label>
-              <label>
-                {form.fields.type.label}
-                <input placeholder={form.fields.type.placeholder} />
-              </label>
-            </div>
-
-            <div className="ai-description">
-              <div className="ai-description__header">
-                <span>{form.descriptionLabel}</span>
-                <Button size="sm" variant="outline">
-                  <Sparkles size={14} /> {actions.generate}
-                </Button>
-              </div>
-              <div className="ai-description__body">{form.descriptionPlaceholder}</div>
-            </div>
-
-            <div className="modal__actions">
-              <Button>{actions.create}</Button>
-              <Button variant="outline" onClick={() => setIsOpen(false)}>
-                {actions.cancel}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <div className="jobs__list">
+        {loading && (
+          <ClayCard className="job-card">
+            <ClaySpinner label={uiText.jobs.loading} />
+          </ClayCard>
+        )}
+        {error && !loading && (
+          <ClayCard className="job-card">
+            <EmptyState message={error} />
+          </ClayCard>
+        )}
+        {!loading && !error && cards.length === 0 && (
+          <ClayCard className="job-card">
+            <EmptyState message={uiText.jobs.empty} />
+          </ClayCard>
+        )}
+        {cards.map((job) => (
+          <JobCard key={job.id} job={job} />
+        ))}
+      </div>
     </section>
   );
 }

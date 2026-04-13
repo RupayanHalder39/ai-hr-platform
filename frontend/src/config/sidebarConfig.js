@@ -1,3 +1,5 @@
+import { uiText } from "./uiText";
+
 const sidebarConfig = [
   {
     id: "hiring",
@@ -11,7 +13,7 @@ const sidebarConfig = [
       { id: "assignments", label: "Assignments", path: "/hiring/assignments", requiredPermissions: ["hiring:view"] },
       { id: "interviews", label: "Interviews", path: "/hiring/interviews", requiredPermissions: ["hiring:view"] },
       { id: "offers", label: "Offers", path: "/hiring/offers", requiredPermissions: ["hiring:view"] },
-      { id: "settings", label: "Settings", path: "/hiring/settings", requiredPermissions: ["settings:manage"] },
+      { id: "hiring-settings", label: uiText.nav.hiringSettings, path: "/hiring/settings", requiredPermissions: ["settings:manage"] },
     ],
   },
   {
@@ -43,6 +45,15 @@ const sidebarConfig = [
     label: "Onboarding",
     path: "/onboarding",
     requiredPermissions: ["onboarding:view"],
+  },
+  {
+    id: "system",
+    label: uiText.nav.system,
+    type: "accordion",
+    items: [
+      { id: "system-settings", label: uiText.nav.systemSettings, path: "/settings", requiredPermissions: ["settings:manage"] },
+    ],
+    requiredPermissions: ["settings:manage"],
   },
 ];
 

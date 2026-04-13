@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_session
 from app.modules.hiring.candidates.repository import CandidateRepository
-from app.modules.hiring.candidates.schema import CandidateCreate, CandidateRead, CandidateUpdate
+from app.modules.hiring.candidates.schema import CandidateCreate, CandidateListRead, CandidateRead, CandidateUpdate
 from app.modules.hiring.candidates.service import CandidateService
 from app.schemas.response import APIResponse, ListResponse, PaginationMeta
 from app.utils.exceptions import NotFoundError
@@ -16,7 +16,7 @@ def get_service() -> CandidateService:
     return CandidateService(CandidateRepository())
 
 
-@router.get("/", response_model=ListResponse[CandidateRead])
+@router.get("/", response_model=ListResponse[CandidateListRead])
 async def list_candidates(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
@@ -37,15 +37,7 @@ async def list_candidates(
         "search": search,
     }
     items, total = await service.list_candidates(session, pagination, filters)
-    data = [
-        CandidateRead(
-            **candidate.__dict__,
-            job_title=job_title,
-            stage_name=stage_name,
-        )
-        for candidate, job_title, stage_name in items
-    ]
-    return ListResponse(data=data, meta=PaginationMeta(page=page, page_size=page_size, total=total))
+    return ListResponse(data=items, meta=PaginationMeta(page=page, page_size=page_size, total=total))
 
 
 @router.get("/{candidate_id}", response_model=APIResponse[CandidateRead])

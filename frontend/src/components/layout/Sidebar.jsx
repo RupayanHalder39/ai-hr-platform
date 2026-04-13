@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import sidebarConfig from "../../config/sidebarConfig";
 import { hasPermissions } from "../../utils/permissions";
+import { uiText } from "../../config/uiText";
 
 const sectionIcons = {
   hiring: Users,
@@ -25,6 +26,7 @@ const sectionIcons = {
   performance: TrendingUp,
   leave: Calendar,
   onboarding: ClipboardCheck,
+  system: Settings,
 };
 
 const itemIcons = {
@@ -35,9 +37,11 @@ const itemIcons = {
   interviews: Video,
   offers: Gift,
   settings: Settings,
+  "system-settings": Settings,
+  "hiring-settings": Settings,
 };
 
-export function Sidebar({ userPermissions = [], currentPath, onNavigate }) {
+export function Sidebar({ userPermissions = [], user, dbStatus, currentPath, onNavigate }) {
   const [openId, setOpenId] = useState(null);
 
   const items = useMemo(() => {
@@ -60,6 +64,7 @@ export function Sidebar({ userPermissions = [], currentPath, onNavigate }) {
       <div className="sidebar__header">
         <h1 className="sidebar__title">AI HR Platform</h1>
         <p className="sidebar__subtitle">Internal Dashboard</p>
+        {dbStatus === "error" && <span className="sidebar__db-badge">{uiText.layout.dbError}</span>}
       </div>
 
       <nav className="sidebar__nav">
@@ -125,10 +130,13 @@ export function Sidebar({ userPermissions = [], currentPath, onNavigate }) {
 
       <div className="sidebar__footer">
         <button type="button" className="sidebar__profile">
-          <span className="sidebar__avatar">A</span>
+          <span className="sidebar__avatar">{(user?.name || "A").slice(0, 1).toUpperCase()}</span>
           <span>
-            <span className="sidebar__profile-name">Admin</span>
-            <span className="sidebar__profile-sub">Switch role</span>
+            <span className="sidebar__profile-name">{user?.name || "-"}</span>
+            <span className="sidebar__profile-sub">
+              {user?.role ? `${user.role} · ` : ""}
+              {uiText.layout.switchRole}
+            </span>
           </span>
           <ChevronDown className="sidebar__chevron" />
         </button>

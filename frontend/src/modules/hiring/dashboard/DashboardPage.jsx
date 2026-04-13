@@ -4,84 +4,176 @@ import { ClayCard, ClayMetricCard } from "../../../components/common/ClayCard";
 import { Progress } from "../../../components/common/Progress";
 import { Badge } from "../../../components/common/Badge";
 import { Button } from "../../../components/common/Button";
+import { ClaySpinner } from "../../../components/common/ClaySpinner";
+import { EmptyState } from "../../../components/common/EmptyState";
 import { settingsApi } from "../../../services/settings";
 import { candidatesApi } from "../../../services/candidates";
 import { jobsApi } from "../../../services/jobs";
-import { dashboardContent } from "../../../config/dashboardContent";
+import { uiText } from "../../../config/uiText";
+
+const iconPool = [
+  <Briefcase key="briefcase" size={28} />,
+  <Users key="users" size={28} />,
+  <Gift key="gift" size={28} />,
+  <TrendingUp key="trend" size={28} />,
+];
+
+const variantPool = ["blue", "purple", "mint", "peach"];
+const pipelineColors = ["blue", "purple", "pink", "indigo", "green"];
+
+const titleCase = (value) =>
+  value
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 
 export function DashboardPage() {
-  const [stages, setStages] = useState([]);
+  const [statuses, setStatuses] = useState([]);
   const [totalCandidates, setTotalCandidates] = useState(0);
   const [openRoles, setOpenRoles] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const load = async () => {
-      const [stagesResponse, candidatesResponse, jobsResponse] = await Promise.all([
-        settingsApi.stages(),
-        candidatesApi.list({ page: 1, page_size: 1 }),
-        jobsApi.list({ page: 1, page_size: 1 }),
-      ]);
-      setStages(stagesResponse.data || []);
-      setTotalCandidates(candidatesResponse.meta?.total || 0);
-      setOpenRoles(jobsResponse.meta?.total || 0);
+      try {
+        const [statusesResponse, candidatesResponse, jobsResponse] = await Promise.all([
+          settingsApi.statuses(),
+          candidatesApi.list({ page: 1, page_size: 1 }),
+          jobsApi.list({ page: 1, page_size: 1 }),
+        ]);
+        setStatuses(statusesResponse.data || []);
+        setTotalCandidates(candidatesResponse.meta?.total || 0);
+        setOpenRoles(jobsResponse.meta?.total || 0);
+      } catch (err) {
+        setError(uiText.common.error);
+      } finally {
+        setLoading(false);
+      }
     };
     load();
   }, []);
 
-  const pipelineStages = useMemo(() => {
-    return stages.map((stage, index) => ({
-      id: stage.id,
-      name: stage.name,
-      count: 0,
-      color: ["blue", "purple", "pink", "indigo", "green"][index % 5],
+  const groupedStatuses = useMemo(() => {
+    const map = {};
+    statuses.forEach((status) => {
+      const key = status.entity_type || "general";
+      if (!map[key]) map[key] = [];
+      map[key].push(status);
+    });
+    return Object.entries(map).map(([entityType, items]) => ({
+      entityType,
+      items,
     }));
-  }, [stages]);
+  }, [statuses]);
+
+  const metrics = useMemo(() => {
+    const dynamic = groupedStatuses.slice(0, 4).map((group, index) => ({
+      id: group.entityType,
+      title: titleCase(group.entityType),
+      value: group.items.length,
+      icon: iconPool[index % iconPool.length],
+      variant: variantPool[index % variantPool.length],
+    }));
+
+    if (dynamic.length === 0) {
+      return [
+        {
+          id: "jobs",
+          title: uiText.jobs.title,
+          value: openRoles,
+          icon: iconPool[0],
+          variant: variantPool[0],
+        },
+        {
+          id: "candidates",
+          title: uiText.candidates.title,
+          value: totalCandidates,
+          icon: iconPool[1],
+          variant: variantPool[1],
+        },
+      ];
+    }
+
+    return dynamic;
+  }, [groupedStatuses, openRoles, totalCandidates]);
+
+  const pipelineGroup = groupedStatuses[0] || { entityType: "pipeline", items: [] };
+
+  const pipelineStages = useMemo(() => {
+    return pipelineGroup.items.map((status, index) => ({
+      id: status.id,
+      name: status.name,
+      count: 0,
+      color: pipelineColors[index % pipelineColors.length],
+    }));
+  }, [pipelineGroup]);
 
   const totalInPipeline = pipelineStages.reduce((sum, stage) => sum + stage.count, 0) || 0;
 
-  const { metrics, pipeline, approvals, activity } = dashboardContent;
+  const approvalItems = useMemo(() => {
+    return groupedStatuses
+      .filter((group) => ["job", "offer"].includes(group.entityType))
+      .flatMap((group) =>
+        group.items.map((status) => ({
+          id: `${group.entityType}-${status.id}`,
+          type: titleCase(group.entityType),
+          status: status.name,
+        }))
+      );
+  }, [groupedStatuses]);
+
+  const activityItems = useMemo(() => {
+    return groupedStatuses
+      .filter((group) => group.entityType === "interview")
+      .flatMap((group) =>
+        group.items.map((status) => ({
+          id: status.id,
+          label: status.name,
+          type: group.entityType,
+        }))
+      );
+  }, [groupedStatuses]);
+
+  if (loading) {
+    return (
+      <div className="dashboard">
+        <ClayCard className="dashboard__pipeline">
+          <ClaySpinner label={uiText.dashboard.loading} />
+        </ClayCard>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="dashboard">
+        <ClayCard className="dashboard__pipeline">
+          <EmptyState message={error} />
+        </ClayCard>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard">
       <div className="dashboard__metrics">
-        <ClayMetricCard
-          title={metrics.openRoles.title}
-          value={openRoles}
-          change={metrics.openRoles.change}
-          changeType={metrics.openRoles.changeType}
-          icon={<Briefcase size={28} />}
-          variant="blue"
-        />
-        <ClayMetricCard
-          title={metrics.totalCandidates.title}
-          value={totalCandidates}
-          change={metrics.totalCandidates.change}
-          changeType={metrics.totalCandidates.changeType}
-          icon={<Users size={28} />}
-          variant="purple"
-        />
-        <ClayMetricCard
-          title={metrics.activeOffers.title}
-          value={0}
-          change={metrics.activeOffers.change}
-          changeType={metrics.activeOffers.changeType}
-          icon={<Gift size={28} />}
-          variant="mint"
-        />
-        <ClayMetricCard
-          title={metrics.avgTimeToHire.title}
-          value={metrics.avgTimeToHire.value}
-          change={metrics.avgTimeToHire.change}
-          changeType={metrics.avgTimeToHire.changeType}
-          icon={<TrendingUp size={28} />}
-          variant="peach"
-        />
+        {metrics.map((metric) => (
+          <ClayMetricCard
+            key={metric.id}
+            title={metric.title}
+            value={metric.value}
+            icon={metric.icon}
+            variant={metric.variant}
+          />
+        ))}
       </div>
 
       <div className="dashboard__grid">
         <ClayCard className="dashboard__pipeline">
-          <h3>{pipeline.title}</h3>
+          <h3>{`${titleCase(pipelineGroup.entityType)} ${uiText.dashboard.pipelineSuffix}`}</h3>
           <div className="pipeline">
+            {pipelineStages.length === 0 && <EmptyState message={uiText.dashboard.pipelineEmpty} />}
             {pipelineStages.map((stage) => {
               const percentage = totalInPipeline ? (stage.count / totalInPipeline) * 100 : 0;
               return (
@@ -91,7 +183,7 @@ export function DashboardPage() {
                     <span>{stage.name}</span>
                   </div>
                   <span className="pipeline__count">
-                    {stage.count} candidates ({percentage.toFixed(0)}%)
+                    {stage.count} {uiText.dashboard.pipelineCountLabel} ({percentage.toFixed(0)}%)
                   </span>
                   <Progress value={percentage} />
                 </div>
@@ -99,7 +191,7 @@ export function DashboardPage() {
             })}
           </div>
           <div className="pipeline__footer">
-            <span>{pipeline.footerLabel}</span>
+            <span>{uiText.dashboard.pipelineFooter}</span>
             <strong>{totalInPipeline}</strong>
           </div>
         </ClayCard>
@@ -107,20 +199,24 @@ export function DashboardPage() {
         <ClayCard variant="rose" className="dashboard__approvals">
           <div className="approvals__header">
             <AlertCircle size={18} className="approvals__icon" />
-            <h3>{approvals.title}</h3>
+            <h3>{uiText.dashboard.approvalsTitle}</h3>
           </div>
           <div className="approvals__list">
-            {approvals.items.map((approval) => (
-              <div key={approval.item} className="approval-card">
+            {approvalItems.length === 0 && (
+              <div className="approval-card">
+                <EmptyState message={uiText.dashboard.approvalsEmpty} />
+              </div>
+            )}
+            {approvalItems.map((approval) => (
+              <div key={approval.id} className="approval-card">
                 <div>
-                  <p className="approval-card__title">{approval.item}</p>
+                  <p className="approval-card__title">{approval.status}</p>
                   <Badge variant="outline">{approval.type}</Badge>
                 </div>
-                <p className="approval-card__status">{approval.status}</p>
                 <div className="approval-card__actions">
-                  <Button size="sm">Approve</Button>
+                  <Button size="sm">{uiText.dashboard.approve}</Button>
                   <Button size="sm" variant="outline">
-                    Review
+                    {uiText.dashboard.review}
                   </Button>
                 </div>
               </div>
@@ -130,18 +226,18 @@ export function DashboardPage() {
       </div>
 
       <ClayCard variant="lavender">
-        <h3>{activity.title}</h3>
+        <h3>{uiText.dashboard.activityTitle}</h3>
         <div className="activity">
-          {activity.items.map((activity) => (
-            <div key={activity.action} className="activity__item">
-              <div className={`activity__icon activity__icon--${activity.type}`}>
+          {activityItems.length === 0 && <EmptyState message={uiText.dashboard.activityEmpty} />}
+          {activityItems.map((activity) => (
+            <div key={activity.id} className="activity__item">
+              <div className="activity__icon activity__icon--pending">
                 <Clock size={16} />
               </div>
               <div className="activity__details">
-                <p>{activity.action}</p>
-                <span>{activity.candidate}</span>
+                <p>{activity.label}</p>
+                <span>{titleCase(activity.type)}</span>
               </div>
-              <span className="activity__time">{activity.time}</span>
             </div>
           ))}
         </div>

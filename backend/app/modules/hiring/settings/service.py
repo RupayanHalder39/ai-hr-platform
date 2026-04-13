@@ -14,5 +14,11 @@ class HiringSettingsService:
     async def list_jobs(self, session: AsyncSession):
         return await self.repository.list_jobs(session)
 
+    async def list_roles(self, session: AsyncSession):
+        return await self.repository.list_roles(session)
+
     async def list_statuses(self, session: AsyncSession, entity_type: Optional[str]):
         return await self.repository.list_statuses(session, entity_type)
+
+    async def check_health(self, session: AsyncSession):
+        return await self.repository.check_health(session)
